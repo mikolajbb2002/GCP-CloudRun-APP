@@ -13,4 +13,4 @@ router_name        = "flask-router"
 nat_name           = "flask-nat"
 
 cloud_service_name = "flask-app"
-image = "europe-central2-docker.pkg.dev/akademiamikolajpiedawid/repo01/flask-app:1.0"
+image = ""
