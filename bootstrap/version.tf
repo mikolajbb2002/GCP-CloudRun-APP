@@ -7,9 +7,4 @@ terraform {
       version = "~> 7.0"
     }
   }
-
-  backend "gcs" {
-    bucket = "akademia-tfstate-12345"
-    prefix = "infra"
-  }
 }
