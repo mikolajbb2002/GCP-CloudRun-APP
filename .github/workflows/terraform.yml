@@ -5,12 +5,12 @@ on:
     paths: ["infra/**", "app/**"]
   push:
     branches: [main]
-  workflow_dispatch:
-    inputs:
-      apply:
-        description: 'Build + apply?'
-        type: boolean
-        default: true
+  # workflow_dispatch:
+  #   inputs:
+  #     apply:
+  #       description: 'Build + apply?'
+  #       type: boolean
+  #       default: true
 
 env:
   GOOGLE_PROJECT: ${{ vars.GCP_PROJECT_ID }}
@@ -40,7 +40,6 @@ jobs:
       - run: terraform plan -input=false -var-file=dev.tfvars
 
   build:
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply }}
     needs: plan
     runs-on: ubuntu-latest
     steps:
