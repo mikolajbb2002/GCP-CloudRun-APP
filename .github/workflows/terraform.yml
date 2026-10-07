@@ -43,12 +43,12 @@ jobs:
     needs: plan
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - name: Show OIDC claims
         run: |
           curl -s -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
             "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=test" \
               | jq -r '.value | split(".")[1] | @base64d | fromjson | {sub, ref, event_name, job_workflow_ref}'
-      - uses: actions/checkout@v4
       - name: Build image
         working-directory: .
         run: docker build --platform linux/amd64 -t "$TF_VAR_image" .
