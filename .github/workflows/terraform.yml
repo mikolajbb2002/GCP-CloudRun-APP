@@ -1,4 +1,4 @@
-name: GCP-infra-pipeline
+name: GCP-infra
 
 on:
   pull_request:
