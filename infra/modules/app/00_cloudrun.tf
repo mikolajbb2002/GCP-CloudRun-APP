@@ -5,26 +5,26 @@ resource "google_cloud_run_service" "this" {
   template {
     metadata {
       annotations = {
-      "autoscaling.knative.dev/minScale"         = "1"
-      "autoscaling.knative.dev/maxScale"         = "3"
-      "run.googleapis.com/scaling-cpu-target"    = "0.5"
-      "run.googleapis.com/execution-environment" = "gen1"
-      "run.googleapis.com/cpu-throttling"        = "true"
-      "run.googleapis.com/vpc-access-connector" = var.vpc_connector_id
-      "run.googleapis.com/vpc-access-egress"    = "private-ranges-only"
+        "autoscaling.knative.dev/minScale"         = "1"
+        "autoscaling.knative.dev/maxScale"         = "3"
+        "run.googleapis.com/scaling-cpu-target"    = "0.5"
+        "run.googleapis.com/execution-environment" = "gen1"
+        "run.googleapis.com/cpu-throttling"        = "true"
+        "run.googleapis.com/vpc-access-connector"  = var.vpc_connector_id
+        "run.googleapis.com/vpc-access-egress"     = "private-ranges-only"
+      }
     }
-  }
     spec {
       container_concurrency = 1
       containers {
         image = var.image
         resources {
           limits = {
-            "cpu" = "0.25"
+            "cpu"    = "0.25"
             "memory" = "512Mi"
           }
         }
-      
+
       }
     }
   }

@@ -1,6 +1,6 @@
 variable "region" {
-  type        = string
-  default     = "europe-west3"
+  type    = string
+  default = "europe-west3"
 }
 
 variable "registry_repo_id" {
