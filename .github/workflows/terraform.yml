@@ -2,17 +2,19 @@ name: terraform
 
 on:
   pull_request:
-    paths: ["infra/**"]
+    paths: ["infra/**", "app/**"]
   push:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
     inputs:
       apply:
-        description: 'Apply?'
+        description: 'Build + apply?'
         type: boolean
         default: true
 
+env:
+  GOOGLE_PROJECT: ${{ vars.GCP_PROJECT_ID }}
+TF_VAR_image: europe-central2-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/repo01/flask-app:${{ github.sha }}
 permissions:
   id-token: write
   contents: read
@@ -26,32 +28,44 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ vars.WIF_PROVIDER }}
           service_account: ${{ vars.SA_PLAN }}
-
       - uses: hashicorp/setup-terraform@v3
-
       - run: terraform fmt -check -recursive
       - run: terraform init
       - run: terraform validate
-      - run: terraform plan -input=false
+      - run: terraform plan -input=false -var-file=environments/dev.tfvars
 
-  apply:
+  build:
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply }}
     needs: plan
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ vars.WIF_PROVIDER }}
           service_account: ${{ vars.SA_APPLY }}
+      - name: Docker auth
+        working-directory: .
+        run: gcloud auth configure-docker europe-central2-docker.pkg.dev --quiet
+      - name: Build and push
+        working-directory: .
+        run: |
+          docker build --platform linux/amd64 -t "$TF_VAR_image" .
+          docker push "$TF_VAR_image"
 
+  apply:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.SA_APPLY }}
       - uses: hashicorp/setup-terraform@v3
-
       - run: terraform init
-      - run: terraform apply -auto-approve -input=false
+      - run: terraform apply -auto-approve -input=false -var-file=environments/dev.tfvars

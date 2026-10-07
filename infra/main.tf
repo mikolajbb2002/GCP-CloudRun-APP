@@ -1,12 +1,5 @@
 data "google_client_config" "current" {}
 
-module "registry" {
-  source                    = "./modules/registry"
-  region                    = var.region
-  registry_repo_id          = var.registry_repo_id
-  registry_repo_description = var.registry_repo_description
-}
-
 module "network" {
   source             = "./modules/network"
   project_id         = data.google_client_config.current.project

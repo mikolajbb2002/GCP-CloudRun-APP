@@ -1,3 +1,11 @@
+module "registry" {
+  source                    = "./modules/registry"
+  region                    = var.registry_region
+  registry_repo_id          = var.registry_repo_id
+  registry_repo_description = var.registry_repo_description
+}
+
+
 # --- API ----
 resource "google_project_service" "iam" {
   project            = var.project_id
