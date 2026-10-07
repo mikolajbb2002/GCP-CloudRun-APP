@@ -1,0 +1,58 @@
+resource "google_cloud_run_service" "this" {
+  name     = var.cloud_service_name
+  location = var.region
+
+  template {
+    metadata {
+      annotations = {
+      "autoscaling.knative.dev/minScale"         = "1"
+      "autoscaling.knative.dev/maxScale"         = "3"
+      "run.googleapis.com/scaling-cpu-target"    = "0.5"
+      "run.googleapis.com/execution-environment" = "gen1"
+      "run.googleapis.com/cpu-throttling"        = "true"
+      "run.googleapis.com/vpc-access-connector" = var.vpc_connector_id
+      "run.googleapis.com/vpc-access-egress"    = "private-ranges-only"
+    }
+  }
+    spec {
+      container_concurrency = 1
+      containers {
+        image = var.image
+        resources {
+          limits = {
+            "cpu" = "0.25"
+            "memory" = "512Mi"
+          }
+        }
+      
+      }
+    }
+  }
+
+  traffic {
+    percent         = 100
+    latest_revision = true
+  }
+}
+
+resource "google_cloud_run_service_iam_member" "public" {
+  project  = google_cloud_run_service.this.project
+  location = google_cloud_run_service.this.location
+  service  = google_cloud_run_service.this.name
+  role     = "roles/run.invoker"
+  member   = "allUsers"
+}
+
+resource "google_logging_project_bucket_config" "cloudrun" {
+  project        = var.project_id
+  location       = var.region
+  bucket_id      = "cloudrun-logs"
+  retention_days = 14
+}
+
+resource "google_logging_project_sink" "cloudrun" {
+  name        = "cloudrun-sink"
+  project     = var.project_id
+  destination = "logging.googleapis.com/${google_logging_project_bucket_config.cloudrun.id}"
+  filter      = "resource.type=\"cloud_run_revision\""
+}
