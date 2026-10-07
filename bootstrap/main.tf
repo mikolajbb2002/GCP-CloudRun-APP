@@ -98,7 +98,7 @@ resource "google_service_account_iam_member" "plan_wif" {
 resource "google_service_account_iam_member" "apply_wif" {
   service_account_id = google_service_account.tf_apply.name
   role               = "roles/iam.workloadIdentityUser"
-  member             = "principal://iam.googleapis.com/${google_iam_workload_identity_pool.github.name}/subject/repo:${var.github_repo}:ref:refs/heads/main"
+  member             = "principal://iam.googleapis.com/${google_iam_workload_identity_pool.github.name}/subject/repo:mikolajbb2002@148116408/GCP-CloudRun-APP@1408439187:ref:refs/heads/main"
 }
 
 # --- Uprawnienia: plan ---
