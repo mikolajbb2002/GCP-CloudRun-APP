@@ -1,4 +1,4 @@
-name: terraform
+name: GCP-infra-pipeline
 
 on:
   pull_request:
