@@ -1,6 +1,4 @@
-region                    = "europe-central2"
-registry_repo_id          = "repo01"
-registry_repo_description = " Repo for flask-app docker images"
+region = "europe-central2"
 
 vpc_name           = "flask-vpc"
 subnet_01_name     = "flask-subnet-01"
@@ -13,4 +11,4 @@ router_name        = "flask-router"
 nat_name           = "flask-nat"
 
 cloud_service_name = "flask-app"
-image              = ""
+# Obraz jest przekazywany przez TF_VAR_image w GitHub Actions.

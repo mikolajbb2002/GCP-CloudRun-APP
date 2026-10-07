@@ -48,4 +48,10 @@ variable "cloud_service_name" {
 variable "image" {
   description = "Pełny adres istniejącego obrazu kontenera wraz z tagiem lub digestem."
   type        = string
+  nullable    = false
+
+  validation {
+    condition     = length(trimspace(var.image)) > 0
+    error_message = "Podaj niepusty adres obrazu przez TF_VAR_image lub lokalny plik tfvars."
+  }
 }
