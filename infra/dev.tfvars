@@ -13,4 +13,4 @@ router_name        = "flask-router"
 nat_name           = "flask-nat"
 
 cloud_service_name = "flask-app"
-image = ""
+image              = ""
