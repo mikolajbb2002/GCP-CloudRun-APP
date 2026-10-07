@@ -14,7 +14,8 @@ on:
 
 env:
   GOOGLE_PROJECT: ${{ vars.GCP_PROJECT_ID }}
-TF_VAR_image: europe-central2-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/repo01/flask-app:${{ github.sha }}
+  TF_VAR_image: europe-central2-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/repo01/flask-app:${{ github.sha }}
+
 permissions:
   id-token: write
   contents: read
