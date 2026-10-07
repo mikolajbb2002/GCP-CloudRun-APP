@@ -55,6 +55,11 @@ jobs:
           token_format: access_token
           workload_identity_provider: ${{ vars.WIF_PROVIDER }}
           service_account: ${{ vars.SA_APPLY }}
+      - name: Show OIDC claims
+        run: |
+          curl -s -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=test" \
+              | jq -r '.value | split(".")[1] | @base64d | fromjson | {sub, ref, event_name, job_workflow_ref}'
       - name: Docker auth
         uses: docker/login-action@v3
         with:
