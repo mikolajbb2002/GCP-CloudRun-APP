@@ -3,12 +3,12 @@ name: GCP-infra (01-cloudrun)
 on:
   pull_request:
     paths:
-      - "cloud-projects/01-cloudrun/**"
+      - "01-cloudrun/**"
       - ".github/workflows/terraform.yml"
   push:
     branches: [main]
     paths:
-      - "cloud-projects/01-cloudrun/**"
+      - "01-cloudrun/**"
       - ".github/workflows/terraform.yml"
   workflow_dispatch:
     inputs:
@@ -27,7 +27,7 @@ permissions:
 
 defaults:
   run:
-    working-directory: cloud-projects/01-cloudrun/infra
+    working-directory: 01-cloudrun/infra
 
 jobs:
   plan:
@@ -49,14 +49,9 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: cloud-projects/01-cloudrun
+        working-directory: 01-cloudrun
     steps:
       - uses: actions/checkout@v4
-      - name: Show OIDC claims
-        run: |
-          curl -s -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=test" \
-              | jq -r '.value | split(".")[1] | @base64d | fromjson | {sub, ref, event_name, job_workflow_ref}'
       - name: Build image
         run: docker build --platform linux/amd64 -t "$TF_VAR_image" .
       - uses: google-github-actions/auth@v2
