@@ -130,7 +130,7 @@ locals {
     "roles/artifactregistry.admin",
     "roles/iam.serviceAccountUser",
     "roles/serviceusage.serviceUsageAdmin",
-    "roles/iam.serviceAccountAdmin", 
+    "roles/iam.serviceAccountAdmin",
     "roles/secretManagerAdmin"
   ]
 }

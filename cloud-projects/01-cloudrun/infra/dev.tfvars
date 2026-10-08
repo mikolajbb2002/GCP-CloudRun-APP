@@ -12,5 +12,5 @@ nat_name           = "flask-nat"
 
 cloud_service_name = "flask-app"
 # Obraz jest przekazywany przez TF_VAR_image w GitHub Actions.
-secret_id          = "flask-app-secret"
-account_id         = "sa-flask-app"
+secret_id  = "flask-app-secret"
+account_id = "sa-flask-app"
