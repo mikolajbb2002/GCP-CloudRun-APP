@@ -1,0 +1,20 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name:  {{ include "payment-api.fullname" . }}-hpa
+  labels:
+    {{- include "payment-api.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "payment-api.fullname" . }}-deployment
+  minReplicas: {{ .Values.hpa.minReplicas }}
+  maxReplicas: {{ .Values.hpa.maxReplicas }}
+  metrics:
+    - type: {{ .Values.hpa.metrics.type }}
+      resource:
+        name: {{ .Values.hpa.metrics.resource.name }}
+        target:
+          type: {{ .Values.hpa.metrics.resource.targetType }}
+          averageUtilization: {{ .Values.hpa.targetCPUUtilizationPercentage }}

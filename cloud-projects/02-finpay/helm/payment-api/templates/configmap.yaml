@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "payment-api.fullname" . }}-configmap
+  labels:
+    {{- include "payment-api.labels" . | nindent 4 }}
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+    <style>
+        body {
+          background-color: #1e1e1e;
+          color: #d64a4a;
+          font-family: Consolas, monospace;
+        }
+    </style>
+    <head>
+        <title>API is working!</title>
+    </head>
+    <body>
+        <h1>API is working!</h1>
+    </body>
+    </html>

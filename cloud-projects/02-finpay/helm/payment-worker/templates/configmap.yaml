@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "payment-worker.fullname" . }}-configmap
+  labels:
+    {{- include "payment-worker.labels" . | nindent 4 }}
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+    <style>
+        body {
+          background-color: #1e1e1e;
+          color: #d64a4a;
+          font-family: Consolas, monospace;
+        }
+    </style>
+    <head>
+        <title>Worker is working!</title>
+    </head>
+    <body>
+        <h1>Worker is working!</h1>
+    </body>
+    </html>

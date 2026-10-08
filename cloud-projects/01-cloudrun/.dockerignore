@@ -1,0 +1,5 @@
+# Do obrazu aplikacji potrzebne są tylko te pliki.
+*
+!Dockerfile
+!app.py
+!requirements.txt

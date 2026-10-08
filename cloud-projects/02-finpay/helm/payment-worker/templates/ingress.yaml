@@ -1,0 +1,33 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "payment-worker.fullname" . }}-ingress
+  labels:
+    {{- include "payment-worker.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.className | quote }}
+  {{- if .Values.ingress.host }}
+  rules:
+    - host: {{ .Values.ingress.host | quote }}
+      http:
+        paths:
+          - path: {{ .Values.ingress.path | quote }}
+            pathType: {{ .Values.ingress.pathType }}
+            backend:
+              service:
+                name: {{ include "payment-worker.fullname" . }}-service
+                port:
+                  number: {{ .Values.service.port }}
+  {{- else }}
+  defaultBackend:
+    service:
+      name: {{ include "payment-worker.fullname" . }}-service
+      port:
+        number: {{ .Values.service.port }}
+  {{- end }}
+{{- end }}

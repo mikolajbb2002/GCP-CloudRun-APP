@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "payment-worker.fullname" . }}-deployment
+  labels:
+    {{- include "payment-worker.labels" . | nindent 4 }}
+    app.kubernetes.io/component: worker
+spec:
+  replicas: {{ .Values.deployment.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "payment-worker.selector" . | nindent 6 }}
+      app.kubernetes.io/component: worker
+  template:
+    metadata:
+      labels:
+        {{- include "payment-worker.labels" . | nindent 8 }}
+        app.kubernetes.io/component: worker
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Values.deployment.name }}
+          image: "{{ .Values.deployment.image.repository }}:{{ .Values.deployment.image.tag }}"
+          imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.deployment.containerPort }}
+              name: http
+          env:
+            {{- range $key, $value := .Values.deployment.env }}
+            - name: {{ $key }}
+              value: "{{ $value }}"
+            {{- end }}   
+          resources:
+            requests:
+              cpu: {{ .Values.deployment.resources.requests.cpu }}
+              memory: {{ .Values.deployment.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.deployment.resources.limits.cpu }}
+              memory: {{ .Values.deployment.resources.limits.memory }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.deployment.probes.liveness.path }}
+              port: {{ .Values.deployment.probes.liveness.port }}
+            initialDelaySeconds: {{ .Values.deployment.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.deployment.probes.liveness.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.deployment.probes.readiness.path }}
+              port: {{ .Values.deployment.probes.readiness.port }}
+            initialDelaySeconds: {{ .Values.deployment.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.deployment.probes.readiness.periodSeconds }}
+          startupProbe:
+            httpGet:
+              path: {{ .Values.deployment.probes.startup.path }}
+              port: {{ .Values.deployment.probes.startup.port }}
+            initialDelaySeconds: {{ .Values.deployment.probes.startup.initialDelaySeconds }}
+            failureThreshold: {{ .Values.deployment.probes.startup.failureThreshold }}
+            periodSeconds: {{ .Values.deployment.probes.startup.periodSeconds }}
+          volumeMounts:
+            - name: worker-pvc
+              mountPath: /data
+            {{- if .Values.secrets.enabled }}
+            - name: worker-secrets
+              mountPath: /etc/secrets-volume
+              readOnly: true
+            {{- end }}
+            - name: worker-configmap
+              mountPath: /etc/config-volume
+              readOnly: true
+      volumes:
+        - name: worker-pvc
+          persistentVolumeClaim:
+            claimName: {{ include "payment-worker.fullname" . }}-pvc
+        - name: worker-configmap
+          configMap:
+            name: {{ include "payment-worker.fullname" . }}-configmap
+            optional: false
+        {{- if .Values.secrets.enabled }}
+        - name: worker-secrets
+          secret:
+            secretName: {{ include "payment-worker.fullname" . }}-secrets
+            optional: false
+            items:
+              - key: db-password
+                path: db-password
+        {{- end }}

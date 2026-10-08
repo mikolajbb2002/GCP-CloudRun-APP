@@ -1,0 +1,22 @@
+# Lokalne wyniki poleceń
+outputs.txt
+
+# Pobrane moduły i providery Terraform
+.terraform/
+
+# Stan Terraform, kopie i blokady stanu
+*.tfstate
+*.tfstate.*
+.terraform.tfstate.lock.info
+
+# Lokalne wartości zmiennych (pliki *.tfvars.example pozostają w repo)
+*.tfvars
+*.tfvars.json
+
+# Zapisane plany i logi awarii
+*.tfplan
+tfplan
+crash.log
+crash.*.log
+
+# .terraform.lock.hcl pozostaje w repo: zapisuje wersje providerów.

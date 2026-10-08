@@ -1,0 +1,35 @@
+# OS noise
+.DS_Store
+
+# Build outputs
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# Maven wrapper binary (keep properties/scripts if added later)
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE / tooling
+.idea/
+.vscode/
+*.iml
+.classpath
+.project
+.settings/
+
+# Logs and temp
+*.log
+logs/
+tmp/
+# Terraform
+*.tfstate
+*.tfstate.backup
+.tfstate.lock.info
+.tfplan
+.terraform/
+tf-acr/.terraform/
+tf-acr/terraform.tfstate
+tf-acr/terraform.tfstate.backup
+.azure/

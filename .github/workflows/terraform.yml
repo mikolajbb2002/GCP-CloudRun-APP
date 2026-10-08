@@ -1,10 +1,15 @@
-name: GCP-infra
+name: GCP-infra (01-cloudrun)
 
 on:
   pull_request:
-    paths: ["infra/**", "app/**"]
+    paths:
+      - "cloud-projects/01-cloudrun/**"
+      - ".github/workflows/terraform.yml"
   push:
     branches: [main]
+    paths:
+      - "cloud-projects/01-cloudrun/**"
+      - ".github/workflows/terraform.yml"
   # workflow_dispatch:
   #   inputs:
   #     apply:
@@ -22,7 +27,7 @@ permissions:
 
 defaults:
   run:
-    working-directory: infra
+    working-directory: cloud-projects/01-cloudrun/infra
 
 jobs:
   plan:
@@ -40,8 +45,12 @@ jobs:
       - run: terraform plan -input=false -var-file=dev.tfvars
 
   build:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: plan
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cloud-projects/01-cloudrun
     steps:
       - uses: actions/checkout@v4
       - name: Show OIDC claims
@@ -50,7 +59,6 @@ jobs:
             "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=test" \
               | jq -r '.value | split(".")[1] | @base64d | fromjson | {sub, ref, event_name, job_workflow_ref}'
       - name: Build image
-        working-directory: .
         run: docker build --platform linux/amd64 -t "$TF_VAR_image" .
       - uses: google-github-actions/auth@v2
         id: registry_auth
@@ -66,7 +74,6 @@ jobs:
           username: oauth2accesstoken
           password: ${{ steps.registry_auth.outputs.access_token }}
       - name: Push image
-        working-directory: .
         run: docker push "$TF_VAR_image"
 
   apply:

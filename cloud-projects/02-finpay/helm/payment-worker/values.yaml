@@ -1,0 +1,85 @@
+environment: dev
+imagePullSecrets: []
+
+service:
+  type: ClusterIP
+  port: 8090
+
+ingress:
+  enabled: false
+  className: azure-application-gateway
+  annotations: {}
+  host: ""
+  path: /
+  pathType: Prefix
+
+deployment:
+  replicaCount: 1
+  name: payment-worker
+  image:
+    repository: acrepository111.azurecr.io/payment-worker
+    tag: "1548031"
+    pullPolicy: IfNotPresent
+  containerPort: 8090
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "100Mi"
+    limits:
+      cpu: "500m"
+      memory: "500Mi"
+  probes:
+    liveness:
+      path: /actuator/health/liveness
+      port: 8090
+      initialDelaySeconds: 3
+      periodSeconds: 10
+    readiness:
+      path: /actuator/health/readiness
+      port: 8090
+      initialDelaySeconds: 15
+      periodSeconds: 5
+    startup:
+      path: /actuator/health
+      port: 8090
+      initialDelaySeconds: 30
+      failureThreshold: 30
+      periodSeconds: 10
+
+  env:
+    PAYMENT_WORKER_PORT: "8090"
+    PAYMENT_API_BASE_URL: "http://payment-api-payment-platform-api-service.api-ns.svc.cluster.local:8080"
+    WORKER_CPU_LOAD_MS: "500"
+
+storageClass:
+  # Leave empty to use the cluster default StorageClass (recommended for AKS).
+  name: ""
+  size: 1Gi
+  accessModes:
+    - ReadWriteOnce
+
+hpa:
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 60
+  metrics:
+    type: Resource
+    resource:
+      name: cpu
+      targetType: Utilization
+
+networkPolicy:
+  enabled: true
+  ingress:
+    allowedNamespaces:
+      - api-ns
+    allowedCidrs:
+      - 10.0.16.0/24 # App Gateway subnet
+  egress:
+    allowDns: true
+    allowedCidrs:
+      - 0.0.0.0/0
+    allowedNamespaces: []
+
+secrets:
+  enabled: false

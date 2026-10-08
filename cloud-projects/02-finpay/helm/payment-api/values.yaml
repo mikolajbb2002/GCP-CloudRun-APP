@@ -1,0 +1,122 @@
+# Global defaults
+environment: dev
+imagePullSecrets: []
+
+serviceAccount:
+  create: true
+  name: "payment-api-sa"
+  automount: true
+  annotations: {}
+
+workloadIdentity:
+  enabled: true
+  clientId: "3b7c1350-e44a-4b3f-b20b-20a3764838fd"
+
+service:
+  type: ClusterIP
+  port: 8080 
+
+ingress:
+  enabled: true
+  className: azure-application-gateway
+  annotations:
+    appgw.ingress.kubernetes.io/health-probe-path: "/actuator/health"
+  host: ""
+  path: /
+  pathType: Prefix
+
+deployment:
+  replicaCount: 1
+  strategy:
+    type: Recreate
+  name: payment-api
+  image:
+    repository: acrepository111.azurecr.io/payment-api
+    tag: "1548031"
+    pullPolicy: IfNotPresent
+  containerPort: 8080
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "100Mi"
+    limits:
+      cpu: "500m"
+      memory: "500Mi"
+  probes:
+    liveness:
+      path: /actuator/health/liveness
+      port: 8080
+      initialDelaySeconds: 3
+      periodSeconds: 10
+    readiness:
+      path: /actuator/health/readiness
+      port: 8080
+      initialDelaySeconds: 15
+      periodSeconds: 5
+    startup:
+      path: /actuator/health
+      port: 8080
+      initialDelaySeconds: 30
+      failureThreshold: 30
+      periodSeconds: 10
+
+  env:
+    PAYMENT_DB_URL: "jdbc:postgresql://finpay-pg.postgres.database.azure.com:5432/postgres?sslmode=require"
+    PAYMENT_DB_USER: "pgadmin"
+    PAYMENT_DB_PASSWORD: "P@ssw0rd123!"
+    PAYMENT_WORKER_BASE_URL: "http://payment-worker-payment-platform-worker-service.worker-ns.svc.cluster.local:8090"
+
+secretsStore:
+  enabled: false
+  secretProviderClass: ""
+  mountPath: /mnt/secrets-store
+  readOnly: true
+
+
+secretProviderClass:
+  enabled: false
+  name: ""
+  clientID: ""
+  kvname: ""
+  tenantId: ""
+  objects: {}
+  syncSecret:
+    enabled: false
+    name: ""
+    keys: {}
+
+hpa:
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 60
+  metrics:
+    type: Resource
+    resource:
+      name: cpu
+      targetType: Utilization
+
+networkPolicy:
+  enabled: true
+  ingress:
+    allowedNamespaces:
+      - ingress-nginx
+      - worker-ns
+      - api-ns
+    allowedCidrs:
+      - 10.0.16.0/24 # App Gateway subnet
+  egress:
+    allowDns: true
+    allowedCidrs:
+      - 0.0.0.0/0
+    allowedNamespaces: []
+
+storageClass:
+  enabled: false
+  # Leave empty to use the cluster default StorageClass (recommended for AKS).
+  name: ""
+  size: 1Gi
+  accessModes:
+    - ReadWriteOnce
+
+secrets:
+  enabled: false

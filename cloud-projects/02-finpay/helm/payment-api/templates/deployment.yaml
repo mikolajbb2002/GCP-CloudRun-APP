@@ -1,0 +1,130 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "payment-api.fullname" . }}-deployment
+  labels:
+    {{- include "payment-api.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.deployment.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "payment-api.selector" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "payment-api.labels" . | nindent 8 }}
+        {{- if .Values.workloadIdentity.enabled }}
+        azure.workload.identity/use: "true"
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if or .Values.serviceAccount.create .Values.serviceAccount.name }}
+      serviceAccountName: {{ include "payment-api.serviceAccountName" . }}
+      {{- end }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automount | default true }}
+      containers:
+        - name: {{ .Values.deployment.name }}
+          image: "{{ .Values.deployment.image.repository }}:{{ .Values.deployment.image.tag }}"
+          imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.deployment.containerPort }}
+              name: http
+          env:
+            {{- $kvSynced := and .Values.secretProviderClass.enabled .Values.secretProviderClass.syncSecret.enabled }}
+            {{- $kvEnvKeys := dict }}
+            {{- if $kvSynced }}
+            {{- $_ := set $kvEnvKeys "PAYMENT_DB_PASSWORD" true }}
+            {{- $_ := set $kvEnvKeys "PAYMENT_API_KEY" true }}
+            {{- end }}
+            {{- range $key, $value := .Values.deployment.env }}
+            {{- if not (hasKey $kvEnvKeys $key) }}
+            - name: {{ $key }}
+              value: "{{ $value }}"
+            {{- end }}
+            {{- end }}
+            {{- if $kvSynced }}
+            - name: PAYMENT_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secretProviderClass.syncSecret.name | quote }}
+                  key: {{ .Values.secretProviderClass.syncSecret.keys.PAYMENT_DB_PASSWORD | quote }}
+            - name: PAYMENT_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secretProviderClass.syncSecret.name | quote }}
+                  key: {{ .Values.secretProviderClass.syncSecret.keys.PAYMENT_API_KEY | quote }}
+            {{- end }}
+          resources:
+            requests:
+              cpu: {{ .Values.deployment.resources.requests.cpu }}
+              memory: {{ .Values.deployment.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.deployment.resources.limits.cpu }}
+              memory: {{ .Values.deployment.resources.limits.memory }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.deployment.probes.liveness.path }}
+              port: {{ .Values.deployment.probes.liveness.port }}
+            initialDelaySeconds: {{ .Values.deployment.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.deployment.probes.liveness.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.deployment.probes.readiness.path }}
+              port: {{ .Values.deployment.probes.readiness.port }}
+            initialDelaySeconds: {{ .Values.deployment.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.deployment.probes.readiness.periodSeconds }}
+          startupProbe:
+            httpGet:
+              path: {{ .Values.deployment.probes.startup.path }}
+              port: {{ .Values.deployment.probes.startup.port }}
+            initialDelaySeconds: {{ .Values.deployment.probes.startup.initialDelaySeconds }}
+            failureThreshold: {{ .Values.deployment.probes.startup.failureThreshold }}
+            periodSeconds: {{ .Values.deployment.probes.startup.periodSeconds }}
+          volumeMounts:
+            {{- if .Values.storageClass.enabled }}
+            - name: api-pvc
+              mountPath: /data
+            {{- end }}
+            {{- if .Values.secretsStore.enabled }}
+            - name: secrets-store
+              mountPath: {{ .Values.secretsStore.mountPath | quote }}
+              readOnly: {{ .Values.secretsStore.readOnly }}
+            {{- end }}
+            {{- if .Values.secrets.enabled }}
+            - name: api-secrets
+              mountPath: /etc/secrets-volume
+              readOnly: true
+            {{- end }}
+            - name: api-configmap
+              mountPath: /etc/config-volume
+              readOnly: true
+      volumes:
+        {{- if .Values.storageClass.enabled }}
+        - name: api-pvc
+          persistentVolumeClaim:
+            claimName: {{ include "payment-api.fullname" . }}-pvc
+        {{- end }}
+        {{- if .Values.secretsStore.enabled }}
+        - name: secrets-store
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: {{ .Values.secretsStore.secretProviderClass | quote }}
+        {{- end }}
+        - name: api-configmap
+          configMap:
+            name: {{ include "payment-api.fullname" . }}-configmap
+            optional: false
+        {{- if .Values.secrets.enabled }}
+        - name: api-secrets
+          secret:
+            secretName: {{ include "payment-api.fullname" . }}-secrets
+            optional: false
+            items:
+              - key: db-password
+                path: db-password
+        {{- end }}
