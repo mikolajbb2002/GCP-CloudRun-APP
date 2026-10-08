@@ -10,12 +10,12 @@ on:
     paths:
       - "cloud-projects/01-cloudrun/**"
       - ".github/workflows/terraform.yml"
-  # workflow_dispatch:
-  #   inputs:
-  #     apply:
-  #       description: 'Build + apply?'
-  #       type: boolean
-  #       default: true
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: 'apply?'
+        type: boolean
+        default: true
 
 env:
   GOOGLE_PROJECT: ${{ vars.GCP_PROJECT_ID }}
@@ -45,7 +45,6 @@ jobs:
       - run: terraform plan -input=false -var-file=dev.tfvars
 
   build:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: plan
     runs-on: ubuntu-latest
     defaults:
@@ -77,6 +76,7 @@ jobs:
         run: docker push "$TF_VAR_image"
 
   apply:
+    if: ${{ inputs.apply }}
     needs: build
     runs-on: ubuntu-latest
     steps:
