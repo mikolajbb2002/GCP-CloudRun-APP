@@ -17,8 +17,8 @@ deployment:
   replicaCount: 1
   name: payment-worker
   image:
-    repository: acrepository111.azurecr.io/payment-worker
-    tag: "1548031"
+    repository: europe-central2-docker.pkg.dev/akademiamikolajpiedawid/repo02/payment-worker
+    tag: "v1"
     pullPolicy: IfNotPresent
   containerPort: 8090
   resources:
@@ -52,11 +52,16 @@ deployment:
     WORKER_CPU_LOAD_MS: "500"
 
 storageClass:
-  # Leave empty to use the cluster default StorageClass (recommended for AKS).
+  enabled: false
   name: ""
   size: 1Gi
   accessModes:
     - ReadWriteOnce
+
+secretProviderClass:
+  enabled: false
+  syncSecret:
+    enabled: false
 
 hpa:
   minReplicas: 1
@@ -69,17 +74,17 @@ hpa:
       targetType: Utilization
 
 networkPolicy:
-  enabled: true
-  ingress:
-    allowedNamespaces:
-      - api-ns
-    allowedCidrs:
-      - 10.0.16.0/24 # App Gateway subnet
-  egress:
-    allowDns: true
-    allowedCidrs:
-      - 0.0.0.0/0
-    allowedNamespaces: []
+  enabled: false
+  # ingress:
+  #   allowedNamespaces:
+  #     - api-ns
+  #   allowedCidrs:
+  #     - 10.0.16.0/24 # App Gateway subnet
+  # egress:
+  #   allowDns: true
+  #   allowedCidrs:
+  #     - 0.0.0.0/0
+  #   allowedNamespaces: []
 
 secrets:
   enabled: false

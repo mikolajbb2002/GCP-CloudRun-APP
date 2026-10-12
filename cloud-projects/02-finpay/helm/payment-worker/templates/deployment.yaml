@@ -60,8 +60,10 @@ spec:
             failureThreshold: {{ .Values.deployment.probes.startup.failureThreshold }}
             periodSeconds: {{ .Values.deployment.probes.startup.periodSeconds }}
           volumeMounts:
+            {{- if .Values.storageClass.enabled }}
             - name: worker-pvc
               mountPath: /data
+            {{- end }}
             {{- if .Values.secrets.enabled }}
             - name: worker-secrets
               mountPath: /etc/secrets-volume
@@ -71,9 +73,11 @@ spec:
               mountPath: /etc/config-volume
               readOnly: true
       volumes:
+        {{- if .Values.storageClass.enabled }}
         - name: worker-pvc
           persistentVolumeClaim:
             claimName: {{ include "payment-worker.fullname" . }}-pvc
+        {{- end }}
         - name: worker-configmap
           configMap:
             name: {{ include "payment-worker.fullname" . }}-configmap
