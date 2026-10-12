@@ -1,5 +1,23 @@
 
 # --- API ----
+resource "google_project_service" "compute" {
+  project            = var.project_id
+  service            = "compute.googleapis.com"
+  disable_on_destroy = false
+}
+
+resource "google_project_service" "servicenetworking" {
+  project            = var.project_id
+  service            = "servicenetworking.googleapis.com"
+  disable_on_destroy = false
+}
+
+resource "google_project_service" "sqladmin" {
+  project            = var.project_id
+  service            = "sqladmin.googleapis.com"
+  disable_on_destroy = false
+}
+
 resource "google_project_service" "container" {
   project            = var.project_id
   service            = "container.googleapis.com"
@@ -58,7 +76,7 @@ resource "google_storage_bucket" "tfstate" {
 # --- Workload Identity Federation ---
 resource "google_iam_workload_identity_pool" "github" {
   project                   = var.project_id
-  workload_identity_pool_id = "github-pool"
+  workload_identity_pool_id = "finpay-github-pool"
   depends_on                = [google_project_service.iam]
 }
 
@@ -128,9 +146,10 @@ locals {
     "roles/artifactregistry.admin",
     "roles/iam.serviceAccountUser",
     "roles/serviceusage.serviceUsageAdmin",
-    "roles/iam.serviceAccount.admin",
+    "roles/iam.serviceAccountAdmin",
     "roles/secretmanager.admin",
     "roles/container.admin",
+    "roles/cloudsql.admin",
   ]
 }
 

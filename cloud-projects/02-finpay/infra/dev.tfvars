@@ -1,0 +1,17 @@
+region              = "europe-central2"
+cluster_name        = "finpay-gke"
+pods_cidr_range     = "10.20.0.0/16"
+services_cidr_range = "10.30.0.0/20"
+
+vpc_name           = "finpay-vpc"
+subnet_01_name     = "finpay-subnet-01"
+subnet_01_cidr     = "10.10.1.0/24"
+subnet_02_name     = "finpay-subnet-02"
+subnet_02_cidr     = "10.10.2.0/24"
+vpc_connector_name = "finpay-connector"
+connector_cidr     = "10.10.3.0/28"
+router_name        = "finpay-router"
+nat_name           = "finpay-nat"
+
+secret_id  = "finpay-app-secret"
+account_id = "sa-finpay-app"
