@@ -48,7 +48,7 @@ deployment:
 
   env:
     PAYMENT_WORKER_PORT: "8090"
-    PAYMENT_API_BASE_URL: "http://payment-api-payment-platform-api-service.api-ns.svc.cluster.local:8080"
+    PAYMENT_API_BASE_URL: "http://payment-api-payment-api-api-service.api-ns.svc.cluster.local:8080"
     WORKER_CPU_LOAD_MS: "500"
 
 storageClass:

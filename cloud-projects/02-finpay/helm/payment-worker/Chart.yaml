@@ -1,5 +1,5 @@
 apiVersion: v2
-name: payment-platform
+name: payment-worker
 description: Helm chart for payment worker
 type: application
 version: 0.1.0

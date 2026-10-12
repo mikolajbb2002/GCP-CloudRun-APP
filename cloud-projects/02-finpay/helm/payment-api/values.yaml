@@ -52,7 +52,7 @@ deployment:
   env:
     PAYMENT_DB_URL: "jdbc:postgresql://10.100.160.3:5432/postgres?sslmode=require"
     PAYMENT_DB_USER: "postgres"
-    PAYMENT_WORKER_BASE_URL: "http://payment-worker-payment-platform-worker-service.worker-ns.svc.cluster.local:8090"
+    PAYMENT_WORKER_BASE_URL: "http://payment-worker-payment-worker-worker-service.worker-ns.svc.cluster.local:8090"
     PAYMENT_DB_PASSWORD: "P@ssw0rd"
 secretsStore:
   enabled: false
