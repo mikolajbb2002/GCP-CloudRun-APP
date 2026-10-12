@@ -1,0 +1,129 @@
+name: GCP-infra-pipeline(02-finpay)
+
+on:
+  pull_request:
+    paths:
+      - "cloud-projects/02-finpay/**"
+      - ".github/workflows/finpay.yml"
+  push:
+    branches: [main]
+    paths:
+      - "cloud-projects/02-finpay/**"
+      - ".github/workflows/finpay.yml"
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: 'apply?'
+        type: boolean
+        default: true
+
+env:
+  GOOGLE_PROJECT: ${{ vars.GCP_PROJECT_ID }}
+  TF_VAR_image_api: europe-central2-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/repo02/payment-api:${{ github.sha }}
+  TF_VAR_image_worker: europe-central2-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/repo02/payment-worker:${{ github.sha }}
+  CHART_VERSION: 0.1.${{ github.run_number }}
+
+permissions:
+  id-token: write
+  contents: read
+
+defaults:
+  run:
+    working-directory: cloud-projects/02-finpay/infra
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # --- terraform plan ---
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER_02 }}
+          service_account: ${{ vars.SA_PLAN }}
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform fmt -check -recursive
+      - run: terraform init
+      - run: terraform validate
+      - run: terraform plan -input=false -var-file=dev.tfvars
+
+      # --- build images  ---
+      - name: Build api image
+        working-directory: cloud-projects/02-finpay
+        run: docker build --platform linux/amd64 -f payment-api/Dockerfile.api -t "$TF_VAR_image_api" payment-api/
+      - name: Build worker image
+        working-directory: cloud-projects/02-finpay
+        run: docker build --platform linux/amd64 -f payment-worker/Dockerfile.worker -t "$TF_VAR_image_worker" payment-worker/
+      - name: Save images
+        run: docker save -o /tmp/images.tar "$TF_VAR_image_api" "$TF_VAR_image_worker"
+
+      # ---  chart pracking  ---
+      - uses: azure/setup-helm@v4
+      - name: Lint and package charts
+        working-directory: cloud-projects/02-finpay
+        run: |
+          mkdir -p /tmp/charts
+          for dir in helm/payment-api helm/payment-worker; do
+            helm lint "$dir"
+            helm package "$dir" \
+              --version "$CHART_VERSION" \
+              --app-version "${{ github.sha }}" \
+              -d /tmp/charts
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: |
+            /tmp/images.tar
+            /tmp/charts/*.tgz
+          retention-days: 1
+
+  apply:
+    needs: plan
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: /tmp/out
+
+      - uses: google-github-actions/auth@v2
+        id: auth
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          token_format: access_token
+          workload_identity_provider: ${{ vars.WIF_PROVIDER_02 }}
+          service_account: ${{ vars.SA_APPLY }}
+
+      # --- push images ---
+      - uses: docker/login-action@v3
+        with:
+          registry: europe-central2-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
+      - name: Load and push images
+        run: |
+          docker load -i /tmp/out/images.tar
+          docker push "$TF_VAR_image_api"
+          docker push "$TF_VAR_image_worker"
+
+      # --- push chart ---
+      - uses: azure/setup-helm@v4
+      - name: Push charts
+        run: |
+          echo "${{ steps.auth.outputs.access_token }}" | \
+            helm registry login europe-central2-docker.pkg.dev \
+              -u oauth2accesstoken --password-stdin
+          for f in /tmp/out/charts/*.tgz; do
+            helm push "$f" oci://europe-central2-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/repo02
+          done
+
+      # --- terraform apply ---
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform init
+      - run: terraform apply -auto-approve -input=false -var-file=dev.tfvars
